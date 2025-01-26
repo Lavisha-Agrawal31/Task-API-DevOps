@@ -1,37 +1,32 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_IMAGE_NAME = 'lavisha3101/task-api-devops'
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials' // Docker Hub credentials in Jenkins
-    }
-
     stages {
         stage('Checkout') {
             steps {
+                // Checkout the code from GitHub repository (configured in Jenkins job)
                 checkout scm
             }
         }
-
-        stage('Log in to Docker Hub') {
+        
+        stage('Build Docker Image') {
             steps {
-                docker.withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                script {
+                    // Build Docker image
+                    docker.build('lavisha3101/task-api-devops')
                 }
             }
         }
-
-        stage('Build and Push Docker Image') {
+        
+        stage('Push Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE_NAME .'
-                sh 'docker push $DOCKER_IMAGE_NAME'
+                script {
+                    // Log in to Docker Hub
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
+                        docker.image('lavisha3101/task-api-devops').push()
+                    }
+                }
             }
-        }
-    }
-
-    post {
-        always {
-            sh 'docker logout'
         }
     }
 }
